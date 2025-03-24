@@ -20,7 +20,7 @@ app.use(express.json({ limit: "50mb" }));
 // Définir les origines autorisées
 const allowedOrigins = [
   'http://localhost:5173', // Front-end en local
-  'https://organize-me-front.vercel.app', // Front-end déployé sur Vercel
+  'https://metacode-front.vercel.app', // Front-end déployé sur Vercel
 ];
 
 const corsOptions = {
