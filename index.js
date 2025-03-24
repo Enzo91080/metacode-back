@@ -20,7 +20,7 @@ app.use(express.json({ limit: "50mb" }));
 // Définir les origines autorisées
 const allowedOrigins = [
   'http://localhost:5173', // Front-end en local
-  'https://metacode-back-2025.vercel.app'
+  'https://organize-me-front.vercel.app', // Front-end déployé sur Vercel
 ];
 
 const corsOptions = {
@@ -72,7 +72,7 @@ app.use('/', router);
 
 // Route principale pour tester l'API
 app.get("/welcome", (req, res) => {
-  res.send("Bienvenue sur l'API Organize Me!");
+  res.send("Bienvenue sur l'API Metacode!");
 });
 
 // Redirection par défaut vers /welcome
