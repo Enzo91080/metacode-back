@@ -4,22 +4,24 @@ const { authMiddleware, adminMiddleware } = require('../middlewares/auth');
 
 const router = express.Router();
 
-// Créer une tâche
 router.post('/', authMiddleware, async (req, res) => {
-  const { title, content, visible, downloadable } = req.body;
   try {
-    const metaphore = new Metaphore({
-      title,
-      content,
-      visible,
-      downloadable,
+    const newFiche = await Metaphore.create(req.body);
+
+    // Émettre un événement Socket.IO aux admins
+    req.app.locals.io.emit('new-fiche', {
+      title: newFiche.title,
+      id: newFiche._id,
+      createdAt: newFiche.createdAt,
     });
-    await metaphore.save();
-    res.status(201).json(metaphore);
+
+    res.status(201).json(newFiche);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la création de la fiche' });
   }
 });
+
 
 router.get('/search', async (req, res) => {
   try {

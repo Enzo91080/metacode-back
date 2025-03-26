@@ -3,83 +3,41 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const cors = require('cors');
 const morgan = require('morgan');
+const http = require('http');
+const { Server } = require('socket.io');
 const router = require("./routes");
-const { MongoClient } = require("mongodb");
-const uri = process.env.MONGO_URI;
 
-
-// Initialisation de l'application
 const app = express();
+const server = http.createServer(app); // Wrap Express dans HTTP server
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:5173', 'https://metacode-front.vercel.app'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+    credentials: true,
+  }
+});
 
-// Middleware pour les logs des requêtes
+// Injection de Socket.IO dans l'application Express
+app.locals.io = io;
+
 app.use(morgan('dev'));
-
-// Middleware pour gérer les JSON et limiter leur taille
 app.use(express.json({ limit: "50mb" }));
 
-// Définir les origines autorisées
-const allowedOrigins = [
-  'http://localhost:5173', // Front-end en local
-  'https://metacode-front.vercel.app', // Front-end déployé sur Vercel
-];
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://metacode-front.vercel.app'],
+  credentials: true,
+}));
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error(`CORS Error: Origin ${origin} not allowed`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Permet d'envoyer les cookies et credentials
-  optionsSuccessStatus: 200,
-};
-
-// Middleware CORS
-app.use(cors(corsOptions));
-
-// Middleware pour les requêtes préflight (OPTIONS)
-app.options('*', cors(corsOptions)); // Gérer les requêtes préflight
-
-async function testMongoConnection() {
-  try {
-    const client = new MongoClient(uri, { useUnifiedTopology: true });
-    await client.connect();
-    console.log("✅ Connexion MongoDB réussie !");
-    client.close();
-  } catch (err) {
-    console.error("❌ Erreur de connexion MongoDB :", err.message);
-  }
-}
-
-testMongoConnection();
-
-
-
-
-// Connexion à MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
-
-// Routes
 app.use('/', router);
 
-// Route principale pour tester l'API
-app.get("/welcome", (req, res) => {
-  res.send("Bienvenue sur l'API Metacode!");
-});
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log("✅ MongoDB connecté"))
+  .catch((err) => console.error("❌ Erreur MongoDB :", err));
 
-// Redirection par défaut vers /welcome
-app.get("/", (req, res) => {
-  res.redirect("/welcome");
-});
+app.get('/', (req, res) => res.send("Bienvenue sur l'API Metacode 🚀"));
 
-// Démarrer le serveur
+// Lancer le serveur avec socket.io
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Serveur sur http://localhost:${PORT}`));
