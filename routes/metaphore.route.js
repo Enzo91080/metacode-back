@@ -105,11 +105,68 @@ router.post('/bulk', authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/stats/added", authMiddleware, async (req, res) => {
+  const { period = "week" } = req.query;
 
+  try {
+    let groupStage;
+    let projectStage = {
+      createdAt: 1,
+    };
 
+    switch (period) {
+      case "day":
+        projectStage.date = {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        };
+        groupStage = {
+          _id: "$date",
+          total: { $sum: 1 },
+        };
+        break;
 
+      case "week":
+        projectStage.week = { $isoWeek: "$createdAt" };
+        projectStage.year = { $isoWeekYear: "$createdAt" };
+        groupStage = {
+          _id: { week: "$week", year: "$year" },
+          total: { $sum: 1 },
+        };
+        break;
 
+      case "month":
+        projectStage.month = { $month: "$createdAt" };
+        projectStage.year = { $year: "$createdAt" };
+        groupStage = {
+          _id: { month: "$month", year: "$year" },
+          total: { $sum: 1 },
+        };
+        break;
 
+      case "year":
+        projectStage.year = { $year: "$createdAt" };
+        groupStage = {
+          _id: "$year",
+          total: { $sum: 1 },
+        };
+        break;
+
+      default:
+        return res.status(400).json({ error: "Période invalide." });
+    }
+
+    const result = await Metaphore.aggregate([
+      { $project: projectStage },
+      { $group: groupStage },
+      { $sort: { "_id.year": -1, "_id.week": -1, "_id.month": -1, "_id": -1 } },
+    ]);
+
+    res.json(result);
+  } catch (err) {
+    console.error("Erreur stats métaphores :", err);
+    res.status(500).json({ error: "Erreur lors du calcul des stats." });
+  }
+});
 
 // insérer plusieurs tâches
 // router.post('/bulk', authMiddleware, async (req, res) => {
