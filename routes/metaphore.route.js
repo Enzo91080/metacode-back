@@ -53,43 +53,39 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.patch('/:id/visibility', authMiddleware, async (req, res) => {
+router.patch("/:id/visibility", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const metaphore = await Metaphore.findByIdAndUpdate(
-      req.params.id,
-      { visible: req.body.visible },
-      { new: true }
-    );
+    const fiche = await Metaphore.findById(req.params.id);
+    if (!fiche) return res.status(404).json({ error: "Fiche non trouvée" });
 
-    req.app.locals.io.emit('visibility-changed', {
-      id: metaphore._id,
-      visible: metaphore.visible,
-    });
+    fiche.visible = req.body.visible;
+    await fiche.save();
 
-    res.json(metaphore);
+    req.app.locals.io.emit("update-fiche", fiche); // 🔁 envoie toute la fiche
+
+    res.json(fiche);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.patch('/:id/downloadable', authMiddleware, async (req, res) => {
+router.patch("/:id/downloadable", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const metaphore = await Metaphore.findByIdAndUpdate(
-      req.params.id,
-      { downloadable: req.body.downloadable },
-      { new: true }
-    );
+    const fiche = await Metaphore.findById(req.params.id);
+    if (!fiche) return res.status(404).json({ error: "Fiche non trouvée" });
 
-    req.app.locals.io.emit('downloadable-changed', {
-      id: metaphore._id,
-      downloadable: metaphore.downloadable,
-    });
+    fiche.downloadable = req.body.downloadable;
+    await fiche.save();
 
-    res.json(metaphore);
+    req.app.locals.io.emit("update-fiche", fiche); // 🔁 même chose ici
+
+    res.json(fiche);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
