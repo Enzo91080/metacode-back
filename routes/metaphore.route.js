@@ -116,7 +116,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 
     await fiche.deleteOne();
 
-    req.app.locals.io.emit('delete-fiche', { id: req.params.id });
+    req.app.locals.io.emit('delete-fiche', req.params.id);
 
     res.json({ message: "Fiche supprimée avec succès" });
   } catch (err) {
