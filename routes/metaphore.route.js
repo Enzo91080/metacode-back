@@ -34,7 +34,6 @@ router.get('/search', async (req, res) => {
     const metaphore = await Metaphore.find({
       $or: [
         { title: { $regex: q, $options: 'i' } },
-        { content: { $regex: q, $options: 'i' } }
       ],
     });
 
